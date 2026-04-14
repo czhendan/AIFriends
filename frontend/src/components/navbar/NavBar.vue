@@ -14,7 +14,7 @@ import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
     <!-- Navbar -->
     <nav class="navbar w-full bg-base-100 shadow-sm">
       <!-- 左侧：图标 + 标题（固定不压缩） -->
-      <div class="navbar-start flex items-center gap-1 shrink-0">
+      <div class="flex items-center gap-1 shrink-0">
         <label for="my-drawer-4" aria-label="open sidebar" class="btn btn-square btn-ghost">
           <MenuIcon />
         </label>
@@ -22,10 +22,10 @@ import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
       </div>
 
       <!-- 中间：使用 margin auto 实现居中，不占满剩余空间 -->
-      <div class="navbar-center mx-auto px-2 shrink min-w-0">
-        <div class="join w-auto max-w-md min-w-50">
+      <div class="mx-auto px-2 shrink min-w-0">
+        <div class="join w-auto max-w-xl min-w-50">
           <input
-            class="input join-item rounded-l-full w-40 sm:w-64 md:w-80 grow"
+            class="input join-item rounded-l-full w-50 sm:w-80 md:w-96 grow"
             placeholder="搜索你感兴趣的内容"
           />
           <button class="btn join-item rounded-r-full gap-0">
@@ -36,7 +36,7 @@ import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
       </div>
 
       <!-- 右侧：登录按钮（固定不压缩） -->
-      <div class="navbar-end shrink-0">
+      <div class="shrink-0 ">
         <RouterLink :to="{name: 'user-account-login-index'}" active-class="btn-active" class="btn btn-ghost text-lg whitespace-nowrap">
           登录
         </RouterLink>
