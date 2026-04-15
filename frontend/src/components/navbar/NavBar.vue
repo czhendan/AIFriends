@@ -5,6 +5,10 @@ import HomepageIcon from "@/components/navbar/icons/HomepageIcon.vue";
 import FriendIcon from "@/components/navbar/icons/FriendIcon.vue";
 import CreateIcon from "@/components/navbar/icons/CreateIcon.vue";
 import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
+import {useUserStore} from "@/stores/user.js";
+import UserMenu from "@/components/navbar/UserMenu.vue";
+
+const user = useUserStore()
 </script>
 
 <template>
@@ -25,7 +29,7 @@ import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
       <div class="mx-auto px-2 shrink min-w-0">
         <div class="join w-auto max-w-xl min-w-50">
           <input
-            class="input join-item rounded-l-full w-50 sm:w-80 md:w-96 grow"
+            class="input join-item rounded-l-full w-40 sm:w-80 md:w-96 grow"
             placeholder="搜索你感兴趣的内容"
           />
           <button class="btn join-item rounded-r-full gap-0">
@@ -37,9 +41,14 @@ import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
 
       <!-- 右侧：登录按钮（固定不压缩） -->
       <div class="shrink-0 ">
-        <RouterLink :to="{name: 'user-account-login-index'}" active-class="btn-active" class="btn btn-ghost text-lg whitespace-nowrap">
+        <RouterLink v-if="user.isLogin()" :to="{name: 'create-index'}" active-class="btn-active" class="btn btn-ghost text-base px-1 mx-1">
+          <CreateIcon />
+            创作
+        </RouterLink>
+        <RouterLink v-if="!user.isLogin()" :to="{name: 'user-account-login-index'}" active-class="btn-active" class="btn btn-ghost text-base whitespace-nowrap">
           登录
         </RouterLink>
+        <UserMenu v-else />
       </div>
     </nav>
     <!-- Page content here -->
