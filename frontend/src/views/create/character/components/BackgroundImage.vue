@@ -1,14 +1,13 @@
 <script setup>
 import {nextTick, onBeforeUnmount, ref, useTemplateRef, watch} from "vue";
 import CameraIcon from "@/views/user/profile/components/icons/CameraIcon.vue";
-import Croppie from 'croppie'
-import 'croppie/croppie.css'
+import Croppie from "croppie";
 
-const props = defineProps(['photo'])
-const myPhoto = ref(props.photo)
+const props = defineProps(['backgroundImage'])
+const myBackgroundImage = ref(props.backgroundImage)
 
-watch(() => props.photo, newVal => {
-  myPhoto.value = newVal
+watch(() => props.backgroundImage, newVal => {
+  myBackgroundImage.value = newVal
 })
 
 const fileInputRef = useTemplateRef('file-input-ref')
@@ -21,15 +20,15 @@ async function openModal(photo) {
 
   await nextTick()
   if (!croppie) {
-    croppie = new Croppie(croppieRef.value, {  // 创建croppie对象
-      viewport: {width: 200, height: 200, type: 'square'},
-      boundary: {width: 300, height: 300},
+    croppie = new Croppie(croppieRef.value, {
+      viewport: {width: 300, height: 500},
+      boundary: {width: 600, height: 550},
       enableOrientation: true,
       enforceBoundary: true,
     })
   }
 
-  croppie.bind({ // 绑定裁剪图片
+  croppie.bind({
     url: photo,
   })
 }
@@ -37,9 +36,9 @@ async function openModal(photo) {
 async function crop() {
   if (!croppie) return
 
-  myPhoto.value = await croppie.result({ // 获取裁剪结果
+  myBackgroundImage.value = await croppie.result({
     type: 'base64',
-    size: 'viewport',
+    size: {width: 1080},
   })
 
   modalRef.value.close()
@@ -49,7 +48,9 @@ function onFileChange(e) {
   const file = e.target.files[0]
   e.target.value = ''
   if (!file) return
+
   const reader = new FileReader()
+
   reader.onload = () => {
     openModal(reader.result)
   }
@@ -62,25 +63,27 @@ onBeforeUnmount(() => {  // 释放croppie对象，防止内存泄漏
 })
 
 defineExpose({
-  myPhoto,
+  myBackgroundImage,
 })
 </script>
 
 <template>
-  <div class="flex justify-center">
+  <fieldset class="fieldset">
+    <label class="label text-base">聊天背景</label>
     <div class="avatar relative">
-      <div class="w-28 rounded-full">
-        <img :src="myPhoto" alt="">
+      <div v-if="myBackgroundImage" class="w-15 h-25 rounded-box">
+        <img :src="myBackgroundImage" alt="">
       </div>
-      <div @click="fileInputRef.click()" class="absolute left-0 top-0 w-28 h-28 flex justify-center items-center bg-black/20 rounded-full cursor-pointer">
+      <div v-else class="w-15 h-25 rounded-box bg-base-300"></div>
+      <div @click="fileInputRef.click" class="w-15 h-25 rounded-box bg-black/20 absolute left-0 top-0 flex justify-center items-center cursor-pointer">
         <CameraIcon />
       </div>
     </div>
-  </div>
-  <input ref="file-input-ref" type="file" accept="image/*" class="hidden" @change="onFileChange">
+  </fieldset>
 
+  <input ref="file-input-ref" type="file" class="hidden" accept="image/*" @change="onFileChange">
   <dialog ref="modal-ref" class="modal">
-    <div class="modal-box transition-none">
+    <div class="modal-box transition-none max-w-2xl">
       <button @click="modalRef.close" class="btn btn-ghost btn-circle btn-sm absolute right-2 top-2">✕</button>
       <!-- 定义croppie绑定的标签 -->
       <div ref="croppie-ref" class="flex flex-col justify-center my-4"></div>

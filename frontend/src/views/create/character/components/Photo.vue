@@ -4,6 +4,7 @@ import CameraIcon from "@/views/user/profile/components/icons/CameraIcon.vue";
 import Croppie from 'croppie'
 import 'croppie/croppie.css'
 
+
 const props = defineProps(['photo'])
 const myPhoto = ref(props.photo)
 
@@ -21,7 +22,7 @@ async function openModal(photo) {
 
   await nextTick()
   if (!croppie) {
-    croppie = new Croppie(croppieRef.value, {  // 创建croppie对象
+    croppie = new Croppie(croppieRef.value, {
       viewport: {width: 200, height: 200, type: 'square'},
       boundary: {width: 300, height: 300},
       enableOrientation: true,
@@ -29,7 +30,7 @@ async function openModal(photo) {
     })
   }
 
-  croppie.bind({ // 绑定裁剪图片
+  croppie.bind({
     url: photo,
   })
 }
@@ -37,7 +38,7 @@ async function openModal(photo) {
 async function crop() {
   if (!croppie) return
 
-  myPhoto.value = await croppie.result({ // 获取裁剪结果
+  myPhoto.value = await croppie.result({
     type: 'base64',
     size: 'viewport',
   })
@@ -49,7 +50,9 @@ function onFileChange(e) {
   const file = e.target.files[0]
   e.target.value = ''
   if (!file) return
+
   const reader = new FileReader()
+
   reader.onload = () => {
     openModal(reader.result)
   }
@@ -69,16 +72,17 @@ defineExpose({
 <template>
   <div class="flex justify-center">
     <div class="avatar relative">
-      <div class="w-28 rounded-full">
+      <div v-if="myPhoto" class="w-28 rounded-full">
         <img :src="myPhoto" alt="">
       </div>
-      <div @click="fileInputRef.click()" class="absolute left-0 top-0 w-28 h-28 flex justify-center items-center bg-black/20 rounded-full cursor-pointer">
+      <div v-else class="w-28 rounded-full bg-base-200"></div>
+      <div @click="fileInputRef.click" class="w-28 rounded-full bg-black/20 absolute left-0 top-0 flex justify-center items-center cursor-pointer">
         <CameraIcon />
       </div>
     </div>
   </div>
-  <input ref="file-input-ref" type="file" accept="image/*" class="hidden" @change="onFileChange">
 
+  <input ref="file-input-ref" type="file" class="hidden" accept="image/*" @change="onFileChange">
   <dialog ref="modal-ref" class="modal">
     <div class="modal-box transition-none">
       <button @click="modalRef.close" class="btn btn-ghost btn-circle btn-sm absolute right-2 top-2">✕</button>
