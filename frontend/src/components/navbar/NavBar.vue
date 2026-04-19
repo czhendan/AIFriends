@@ -41,7 +41,7 @@ const user = useUserStore()
 
       <!-- 右侧：登录按钮（固定不压缩） -->
       <div class="shrink-0 ">
-        <RouterLink v-if="user.isLogin()" :to="{name: 'update-character', params: {character_id: 1}}" active-class="btn-active" class="btn btn-ghost text-base px-1 mx-1">
+        <RouterLink v-if="user.isLogin()" :to="{name: 'create-index'}" active-class="btn-active" class="btn btn-ghost text-base px-1 mx-1">
           <CreateIcon />
             创作
         </RouterLink>
