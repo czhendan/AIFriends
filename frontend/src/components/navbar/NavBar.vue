@@ -7,8 +7,27 @@ import CreateIcon from "@/components/navbar/icons/CreateIcon.vue";
 import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
 import {useUserStore} from "@/stores/user.js";
 import UserMenu from "@/components/navbar/UserMenu.vue";
+import {ref, watch} from "vue";
+import {useRoute, useRouter} from "vue-router";
+
 
 const user = useUserStore()
+const searchQuery = ref('')
+const router = useRouter()
+const route = useRoute()
+
+watch(() => route.query.q, newQ => {
+  searchQuery.value = newQ || ''
+})
+
+function handleSearch() {
+  router.push({
+    name: 'homepage-index',
+    query: {
+      q: searchQuery.value.trim()
+    }
+  })
+}
 </script>
 
 <template>
@@ -27,8 +46,9 @@ const user = useUserStore()
 
       <!-- 中间：使用 margin auto 实现居中，不占满剩余空间 -->
       <div class="mx-auto px-2 shrink min-w-0">
-        <div class="join w-auto max-w-xl min-w-50">
+        <form @submit.prevent="handleSearch" class="join w-auto max-w-xl min-w-50">
           <input
+            v-model="searchQuery"
             class="input join-item rounded-l-full w-40 sm:w-80 md:w-96 grow"
             placeholder="搜索你感兴趣的内容"
           />
@@ -36,7 +56,7 @@ const user = useUserStore()
             <SearchIcon />
             <span class="hidden sm:inline">搜索</span>
           </button>
-        </div>
+        </form>
       </div>
 
       <!-- 右侧：登录按钮（固定不压缩） -->
@@ -48,7 +68,7 @@ const user = useUserStore()
         <RouterLink v-if="user.hasPulledUserInfo && !user.isLogin()" :to="{name: 'user-account-login-index'}" active-class="btn-active" class="btn btn-ghost text-base whitespace-nowrap">
           登录
         </RouterLink>
-        <UserMenu v-else-if="user.isLogin()" />
+        <UserMenu v-else-if="user.isLogin()" :searchQuery="searchQuery"/>
       </div>
     </nav>
     <!-- Page content here -->

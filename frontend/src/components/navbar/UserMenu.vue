@@ -6,6 +6,7 @@ import UserLogoutIcon from "@/components/navbar/icons/UserLogoutIcon.vue";
 import api from "@/js/http/api.js";
 import {useRouter} from "vue-router";
 
+const props = defineProps(['searchQuery'])
 const user = useUserStore()
 const router = useRouter()
 
@@ -21,6 +22,9 @@ async function handleLogout() {
       user.logout()
       await router.push({
         name: 'homepage-index',
+        query: {
+          q: props.searchQuery.trim()
+        }
       })
     }
   } catch (err) {
