@@ -26,13 +26,17 @@ class GetListFriendView(APIView):
                         'profile': character.profile,
                         'photo': character.photo.url,
                         'background_image': character.background_image.url,
+                        'author': {
+                            'user_id': author.user_id,
+                            'username': author.user.username,
+                            'photo': author.photo.url,
+                        }
                     },
-                    'author': {
-                        'user_id': author.user_id,
-                        'username': author.user.username,
-                        'photo': author.photo.url,
-                    }
                 })
+            return Response({
+                'result': 'success',
+                'friends': friends
+            })
         except:
             return Response({
                 'result': '系统异常，请稍后再试'
