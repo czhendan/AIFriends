@@ -2,7 +2,7 @@
 import {useRoute} from "vue-router";
 import UserInfoField from "@/views/user/space/UserInfoField.vue";
 import Character from "@/components/character/Character.vue";
-import {nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef} from "vue";
+import {nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef, watch} from "vue";
 import api from "@/js/http/api.js";
 
 const route = useRoute()
@@ -75,6 +75,18 @@ onMounted(async () => {
 function removeCharacter(characterId) {
   characters.value = characters.value.filter(c => c.id !== characterId)
 }
+
+function reset() {
+  characters.value = []
+  userProfile.value = null
+  isLoading.value = false
+  hasCharacters.value = true
+  loadMore()
+}
+
+watch(() => route.params.user_id, newQ => {
+  reset()
+})
 
 onBeforeUnmount(() => {
   observer?.disconnect()
