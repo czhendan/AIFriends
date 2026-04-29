@@ -7,6 +7,7 @@ import streamApi from "@/js/http/streamApi.js";
 
 
 const props = defineProps(['friendId'])
+const emit = defineEmits(['pushBackMessage', 'addToLastMessage'])
 const inputRef = useTemplateRef('input-ref')
 const message = ref('')
 let isProcessing = false
@@ -24,6 +25,10 @@ async function handleSend() {
 
   message.value = ''
 
+  // v-for需要唯一ID，定义id以使用
+  emit('pushBackMessage', {role: 'user', content: content, id: crypto.randomUUID()})
+  emit('pushBackMessage', {role: 'ai', content: '', id: crypto.randomUUID()})
+
   try {
     await streamApi('/api/friend/message/chat/', {
       body: {
@@ -32,9 +37,9 @@ async function handleSend() {
       },
       onmessage(data, isDone) {
         if (isDone) {
-          isProcessing = true
+          isProcessing = false
         } else if (data.content) {
-          console.log(data.content)
+          emit('addToLastMessage', data.content)
         }
       },
       onerror(err) {
@@ -53,7 +58,7 @@ defineExpose({
 </script>
 
 <template>
-  <form @submit.prevent="handleSend" class="absolute bottom-4 left-2 h-12 w-86 flex items-center">
+  <form @submit.prevent="handleSend" class="absolute bottom-4 left-2 h-12 w-90 flex items-center">
     <input
         ref="input-ref"
         v-model="message"
