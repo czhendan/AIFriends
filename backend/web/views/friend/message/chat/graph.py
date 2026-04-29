@@ -21,8 +21,9 @@ class ChatGraph:
         tools = [get_time,]
 
         llm = ChatOpenAI(
-            model="deepseek-v4-flash",
-            # model="mimo-v2-flash-free",
+            model=os.getenv('MODEL'),
+            # model="deepseek-v4-flash",
+            # model="gpt-4.1-free",
             openai_api_key =os.getenv('API_KEY'),
             openai_api_base=os.getenv('API_BASE'),
             streaming=True,
