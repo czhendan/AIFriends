@@ -84,7 +84,7 @@ onMounted(async () => {
           }
         })
       },
-      {root: scrollRef.value, rootMargin: '2px', threshold: 0}
+      {root: null, rootMargin: '2px', threshold: 0}
   )
 
   observer.observe(sentinelRef.value)
@@ -107,7 +107,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div ref="scroll-ref" class="absolute top-18 left-2 w-90 h-112 overflow-y-scroll no-scrollbar">
-    <div ref="sentinel-ref" class="h-2 bg-red-500"></div>
+    <div ref="sentinel-ref" class="h-2"></div>
     <Message
         v-for="message in history"
         :key="message.id"
