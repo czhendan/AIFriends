@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from web.models.character import Character
+from web.models.character import Character, Voice
 from web.models.user import UserProfile
 from web.models.friend import Friend, Message, SystemPrompt
 
@@ -11,7 +11,9 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Character)
 class CharacterAdmin(admin.ModelAdmin):
-    raw_id_fields = ('author',) #,逗号千万不要删除！！！
+    raw_id_fields = ('author', 'voice',) #,逗号千万不要删除！！！
+
+admin.site.register(Voice)
 
 @admin.register(Friend)
 class FriendAdmin(admin.ModelAdmin):

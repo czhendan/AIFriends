@@ -1,5 +1,4 @@
 import os
-from pprint import pprint
 from typing import TypedDict, Annotated, Sequence
 
 import lancedb
@@ -13,7 +12,6 @@ from langgraph.graph import add_messages, StateGraph
 from langgraph.prebuilt import ToolNode
 
 from web.documents.utils.custom_embeddings import CustomEmbeddings
-
 
 class ChatGraph:
     @staticmethod
@@ -36,6 +34,7 @@ class ChatGraph:
             docs = vector_db.similarity_search(query, k=5)
             context = '\n\n'.join([f"内容片段 {i + 1}：\n{doc.page_content}" for i, doc in enumerate(docs)])
             return f"从知识库中找到以下相关信息：\n\n{context}\n"
+
 
         tools = [get_time, search_knowledge_base]
 

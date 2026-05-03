@@ -84,7 +84,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',   # 固定写法
         'NAME': 'aifriends',                     # 刚才创建的数据库名
         'USER': 'root',                         # 你的 MySQL 用户名
-        'PASSWORD': '123456',                 # 对应的密码
+        'PASSWORD': 'Root@123456',                 # 对应的密码
         'HOST': '127.0.0.1',                   # 数据库地址（本地用 127.0.0.1）
         'PORT': '3306',                        # MySQL 默认端口
         'OPTIONS': {

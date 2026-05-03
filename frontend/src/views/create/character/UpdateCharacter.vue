@@ -9,6 +9,7 @@ import {base64ToFile} from "@/js/utils/base64_to_file.js";
 import api from "@/js/http/api.js";
 import {useRoute, useRouter} from "vue-router";
 import {useUserStore} from "@/stores/user.js";
+import Voice from "@/views/create/character/components/Voice.vue";
 
 
 const user = useUserStore()
@@ -16,6 +17,9 @@ const router = useRouter()
 const route = useRoute()
 const characterId = route.params.character_id
 const character = ref(null)
+const voices = ref([])
+const curVoiceId = ref(null)
+const voiceRef = useTemplateRef('voice-ref')
 
 onMounted(async () => {
   try {
@@ -27,6 +31,8 @@ onMounted(async () => {
     const data = res.data
     if (data.result === 'success') {
       character.value = data.character
+      voices.value = data.voices
+      curVoiceId.value = data.character.voice
     }
   } catch (err) {
     console.log(err)
@@ -43,12 +49,15 @@ const errorMessage = ref('')
 async function handleUpdate() {
   const photo = photoRef.value.myPhoto
   const name = nameRef.value.myName?.trim()
+  const voice = voiceRef.value.myVoice
   const profile = profileRef.value.myProfile?.trim()
   const backgroundImage = backgroundImageRef.value.myBackgroundImage
 
   errorMessage.value = ''
   if (!photo) {
     errorMessage.value = '头像不能为空'
+  } else if (!voice) {
+    errorMessage.value = '音色不能为空'
   } else if (!name) {
     errorMessage.value = '角色名不能为空'
   }else if (!backgroundImage) {
@@ -59,6 +68,7 @@ async function handleUpdate() {
     const formData = new FormData()
     formData.append('character_id', characterId)
     formData.append('name', name)
+    formData.append('voice_id', voice)
     formData.append('profile', profile)
     if (photo !== character.value.photo) {
       formData.append('photo', base64ToFile(photo, 'photo.png'))
@@ -94,6 +104,7 @@ async function handleUpdate() {
         <h3 class="text-lg font-bold my-2">更新角色</h3>
         <Photo ref="photo-ref" :photo="character.photo"/>
         <Name ref="name-ref" :name="character.name"/>
+        <Voice ref="voice-ref" :voices="voices" :curVoiceId="curVoiceId"/>
         <Profile ref="profile-ref" :profile="character.profile"/>
         <BackgroundImage ref="background-image-ref" :backgroundImage="character.background_image"/>
 
