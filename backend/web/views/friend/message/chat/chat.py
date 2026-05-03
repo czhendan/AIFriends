@@ -144,7 +144,7 @@ class MessageChatView(APIView):
                    "model": "cosyvoice-v3-flash",
                    "parameters": {
                         "text_type": "PlainText",
-                        "voice": voice_id if voice_id > 0 else "longanhuan",
+                        "voice": voice_id if voice_id is not None else "longanhuan",
                         "format": "mp3",
                         "sample_rate": 22050,
                         "volume": 50,
