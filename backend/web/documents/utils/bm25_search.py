@@ -63,6 +63,19 @@ class BM25Searcher:
             for r in results.hits
         ]
 
+    def search_with_content(self, query: str, k: int = 10) -> list[tuple[str, str]]:
+        """BM25 检索并返回 (chunk_id, content)，供混合检索使用。"""
+        self.index.reload()
+        searcher = self.index.searcher()
+        query_parsed = self.index.parse_query(self._segment(query), ["content"])
+        if query_parsed is None:
+            return []
+        results = searcher.search(query_parsed, limit=k)
+        return [
+            (searcher.doc(r[1])["chunk_id"][0], searcher.doc(r[1])["content"][0])
+            for r in results.hits
+        ]
+
     def _reload(self):
         self.index.reload()
         self.searcher = self.index.searcher()

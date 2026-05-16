@@ -24,11 +24,31 @@ LANCE_URI = str(BASE_DIR / "web" / "documents" / "lancedb_storage")
 TANTIVY_PATH = str(BASE_DIR / "web" / "documents" / "tantivy_index")
 TABLE_NAME = "my_knowledge_base"
 
+# ── 懒汉式单例缓存 ────────────────────────────────────────────────
+_LANCE_DB = None
+_BM25_SEARCHER = None
+
+
+def _get_lance_db():
+    """返回缓存的 LanceDB 连接（懒加载单例）。"""
+    global _LANCE_DB
+    if _LANCE_DB is None:
+        _LANCE_DB = lancedb.connect(LANCE_URI)
+    return _LANCE_DB
+
+
+def _get_bm25_searcher() -> BM25Searcher:
+    """返回缓存的 BM25Searcher 实例（懒加载单例）。"""
+    global _BM25_SEARCHER
+    if _BM25_SEARCHER is None:
+        _BM25_SEARCHER = BM25Searcher(TANTIVY_PATH)
+    return _BM25_SEARCHER
+
 
 # ── 内部 helpers ──────────────────────────────────────────────────
 
 
-def _vector_search_with_scores(query, k=10):
+def _vector_search_with_scores(query: str, k: int = 10) -> list[tuple[str, str, float]]:
     """使用原始 LanceDB 表 API 进行向量检索，保证能获取 id、text 和距离分数。
 
     LanceDB LangChain 包装器在 results_to_docs 中丢弃了 id 列，
@@ -37,7 +57,7 @@ def _vector_search_with_scores(query, k=10):
     Returns:
         [(chunk_id, content, l2_distance), ...] 按 L2 距离升序排列（距离越小越相似）。
     """
-    db = lancedb.connect(LANCE_URI)
+    db = _get_lance_db()
     table = db.open_table(TABLE_NAME)
     embeddings = CustomEmbeddings()
     query_vec = embeddings.embed_query(query)
@@ -50,38 +70,23 @@ def _vector_search_with_scores(query, k=10):
     ]
 
 
-def _get_bm25_searcher():
-    """创建并返回 BM25Searcher 实例（已 reload）。"""
-    bm25 = BM25Searcher(TANTIVY_PATH)
-    bm25._reload()
-    return bm25
-
-
-def _bm25_search_with_content(query, k=10):
+def _bm25_search_with_content(query: str, k: int = 10) -> list[tuple[str, str]]:
     """BM25 检索，同时返回 content，避免二次查询。
 
     Returns:
-        [(chunk_id, content, score), ...]
+        [(chunk_id, content), ...]
     """
     bm25 = _get_bm25_searcher()
-    searcher = bm25.searcher
-
-    query_parsed = bm25.index.parse_query(bm25._segment(query), ["content"])
-    if query_parsed is None:
-        return []
-    results = searcher.search(query_parsed, limit=k)
-    return [
-        (searcher.doc(r[1])["chunk_id"][0],
-         searcher.doc(r[1])["content"][0],
-         r[0])
-        for r in results.hits
-    ]
+    return bm25.search_with_content(query, k=k)
 
 
 # ── RRF ───────────────────────────────────────────────────────────
 
 
-def rrf_fusion(ranked_lists, k=60):
+def rrf_fusion(
+    ranked_lists: list[list[tuple[str, float]]],
+    k: int = 60,
+) -> list[tuple[str, float]]:
     """RRF 融合多个排序列表。
 
     公式: score(d) = Σ 1 / (k + rank_i(d))
@@ -96,7 +101,7 @@ def rrf_fusion(ranked_lists, k=60):
     Returns:
         [(doc_id, score), ...] 按融合后分数降序排列。
     """
-    scores = {}
+    scores: dict[str, float] = {}
     for ranked_list in ranked_lists:
         for rank, (doc_id, _) in enumerate(ranked_list, start=1):
             scores[doc_id] = scores.get(doc_id, 0.0) + 1.0 / (k + rank)
@@ -106,7 +111,13 @@ def rrf_fusion(ranked_lists, k=60):
 # ── 混合检索 ──────────────────────────────────────────────────────
 
 
-def hybrid_search(query, k_vector=10, k_bm25=10, final_k=5, k_rrf=60):
+def hybrid_search(
+    query: str,
+    k_vector: int = 10,
+    k_bm25: int = 10,
+    final_k: int = 5,
+    k_rrf: int = 60,
+) -> list[dict]:
     """混合检索：向量检索 + BM25 关键词检索 + RRF 分数融合。
 
     Args:
@@ -128,8 +139,10 @@ def hybrid_search(query, k_vector=10, k_bm25=10, final_k=5, k_rrf=60):
 
     # ── 2. BM25 检索 ──
     bm25_results = _bm25_search_with_content(query, k=k_bm25)
-    bm25_ranked = [(chunk_id, score) for chunk_id, _, score in bm25_results]
-    bm25_content_map = {chunk_id: content for chunk_id, content, _ in bm25_results}
+    # _bm25_search_with_content 返回 [(chunk_id, content), ...]
+    # RRF 只使用排序位置，score 值被忽略，因此使用占位值 0.0
+    bm25_ranked = [(chunk_id, 0.0) for chunk_id, _ in bm25_results]
+    bm25_content_map = dict(bm25_results)
 
     # ── 3. RRF 融合 ──
     fused = rrf_fusion([vector_ranked, bm25_ranked], k=k_rrf)
@@ -154,7 +167,7 @@ def hybrid_search(query, k_vector=10, k_bm25=10, final_k=5, k_rrf=60):
 # ── 单一检索（用于评估对比） ──────────────────────────────────────
 
 
-def vector_search_only(query, k=5):
+def vector_search_only(query: str, k: int = 5) -> list[tuple[str, str]]:
     """仅使用向量检索（用于评估对比）。
 
     Returns:
@@ -164,11 +177,11 @@ def vector_search_only(query, k=5):
     return [(chunk_id, content) for chunk_id, content, _ in results]
 
 
-def bm25_search_only(query, k=5):
+def bm25_search_only(query: str, k: int = 5) -> list[tuple[str, str]]:
     """仅使用 BM25 关键词检索（用于评估对比）。
 
     Returns:
         [(chunk_id, content), ...]
     """
     results = _bm25_search_with_content(query, k=k)
-    return [(chunk_id, content) for chunk_id, content, _ in results]
+    return list(results)
