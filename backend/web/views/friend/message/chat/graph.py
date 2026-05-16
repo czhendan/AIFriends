@@ -1,17 +1,13 @@
 import os
 from typing import TypedDict, Annotated, Sequence
 
-import lancedb
 from django.utils.timezone import localtime, now
-from langchain_community.vectorstores import LanceDB
 from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langgraph.constants import START, END
 from langgraph.graph import add_messages, StateGraph
 from langgraph.prebuilt import ToolNode
-
-from web.documents.utils.custom_embeddings import CustomEmbeddings
 
 class ChatGraph:
     @staticmethod
@@ -24,15 +20,11 @@ class ChatGraph:
         @tool
         def search_knowledge_base(query: str) -> str:
             """当用户查询阿里云百炼平台或者千问（qwen）的相关信息时，调用此函数，输入为要查询的问题，输出为查询结果。"""
-            db = lancedb.connect('./web/documents/lancedb_storage')
-            embeddings = CustomEmbeddings()
-            vector_db = LanceDB(
-                connection=db,
-                embedding=embeddings,
-                table_name='my_knowledge_base',
-            )
-            docs = vector_db.similarity_search(query, k=5)
-            context = '\n\n'.join([f"内容片段 {i + 1}：\n{doc.page_content}" for i, doc in enumerate(docs)])
+            from web.documents.utils.hybrid_search import hybrid_search
+            results = hybrid_search(query, k_vector=10, k_bm25=10, final_k=5)
+            context = '\n\n'.join([
+                f"内容片段 {i + 1}：\n{r['content']}" for i, r in enumerate(results)
+            ])
             return f"从知识库中找到以下相关信息：\n\n{context}\n"
 
 
