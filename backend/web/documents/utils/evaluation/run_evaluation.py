@@ -8,7 +8,7 @@ import django
 django.setup()
 
 from web.documents.utils.evaluation.generate_dataset import generate_dataset
-from web.documents.utils.evaluation.evaluator import load_dataset, evaluate, print_report
+from web.documents.utils.evaluation.evaluator import load_dataset, evaluate, print_report, save_report
 
 
 def run():
@@ -29,11 +29,16 @@ def run():
     # Step 3: 三路评估
     print("\n=== Step 3: 执行三路检索评估 ===")
     ks = [3, 5, 10]
-    results = evaluate(queries, ks=ks)
+    summary, details = evaluate(queries, ks=ks)
 
-    # Step 4: 输出对比报告
+    # Step 4: 输出对比报告（控制台）
     print("\n=== Step 4: 评估对比报告 ===\n")
-    print_report(results, ks=ks)
+    print_report(summary, ks=ks)
+
+    # Step 5: 保存 Markdown 报告
+    print("\n=== Step 5: 保存详细报告 ===")
+    report_path = os.path.join(os.path.dirname(__file__), "evaluation_report.md")
+    save_report(summary, details, ks=ks, output_path=report_path)
 
 
 if __name__ == "__main__":
