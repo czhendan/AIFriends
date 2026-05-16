@@ -30,6 +30,12 @@ class BM25Searcher:
         """使用 jieba 对文本分词，以空格连接。"""
         return " ".join(jieba.cut(text))
 
+    def _parse_query_safe(self, text: str):
+        """安全解析查询，转义 Tantivy 特殊字符。"""
+        import re
+        cleaned = re.sub(r'([+\-&|!(){}[\]^~*?:\\/"])', r'\\\1', text)
+        return self.index.parse_query(cleaned, ["content"])
+
     def add_documents(self, chunks: list[dict]) -> int:
         """逐条写入文档片段。
 
@@ -54,7 +60,7 @@ class BM25Searcher:
         """BM25 检索，返回 [(chunk_id, score), ...]"""
         self.index.reload()
         searcher = self.index.searcher()
-        query_parsed = self.index.parse_query(self._segment(query), ["content"])
+        query_parsed = self._parse_query_safe(self._segment(query))
         if query_parsed is None:
             return []
         results = searcher.search(query_parsed, limit=k)
@@ -67,7 +73,7 @@ class BM25Searcher:
         """BM25 检索并返回 (chunk_id, content)，供混合检索使用。"""
         self.index.reload()
         searcher = self.index.searcher()
-        query_parsed = self.index.parse_query(self._segment(query), ["content"])
+        query_parsed = self._parse_query_safe(self._segment(query))
         if query_parsed is None:
             return []
         results = searcher.search(query_parsed, limit=k)

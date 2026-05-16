@@ -2,7 +2,7 @@ import json
 import os
 from openai import OpenAI
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def load_chunks_from_lancedb() -> list[dict]:
@@ -10,8 +10,8 @@ def load_chunks_from_lancedb() -> list[dict]:
     import lancedb
     db = lancedb.connect(os.path.join(BASE_DIR, "lancedb_storage"))
     table = db.open_table("my_knowledge_base")
-    rows = table.to_pandas()
-    return [{"chunk_id": row["id"], "content": row["text"]} for _, row in rows.iterrows()]
+    rows = table.to_arrow()
+    return [{"chunk_id": row["id"], "content": row["text"]} for row in rows.to_pylist()]
 
 
 def generate_dataset(output_path: str = None) -> dict:
