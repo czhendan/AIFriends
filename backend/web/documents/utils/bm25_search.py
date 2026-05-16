@@ -24,7 +24,6 @@ class BM25Searcher:
             os.makedirs(index_path, exist_ok=True)
             self.index = tantivy.Index(self.schema, path=index_path)
         self.searcher = None
-        self._writer = None
 
     @staticmethod
     def _segment(text: str) -> str:
@@ -53,9 +52,11 @@ class BM25Searcher:
 
     def search(self, query: str, k: int = 10) -> list[tuple[str, float]]:
         """BM25 检索，返回 [(chunk_id, score), ...]"""
-        self._reload()
+        self.index.reload()
         searcher = self.index.searcher()
         query_parsed = self.index.parse_query(self._segment(query), ["content"])
+        if query_parsed is None:
+            return []
         results = searcher.search(query_parsed, limit=k)
         return [
             (searcher.doc(r[1])["chunk_id"][0], r[0])
