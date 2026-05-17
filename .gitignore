@@ -9,6 +9,7 @@ media/
 staticfiles/
 static/
 *.env
+.claude/
 !.env.example
 backend/web/documents/data.txt
 backend/web/documents/lancedb_storage

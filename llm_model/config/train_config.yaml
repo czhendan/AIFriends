@@ -1,0 +1,55 @@
+model:
+  name: "Qwen/Qwen2.5-3B-Instruct"
+  max_seq_length: 512
+
+qlora:
+  load_in_4bit: true
+  bnb_4bit_compute_dtype: "bfloat16"
+  bnb_4bit_quant_type: "nf4"
+  lora_r: 8
+  lora_alpha: 16
+  lora_dropout: 0.05
+  lora_target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+
+sft:
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 4
+  learning_rate: 2.0e-4
+  num_train_epochs: 3
+  warmup_ratio: 0.1
+  logging_steps: 10
+  save_steps: 100
+  max_grad_norm: 1.0
+
+grpo:
+  per_device_train_batch_size: 4
+  gradient_accumulation_steps: 4
+  learning_rate: 5.0e-5
+  num_generations: 2
+  num_train_epochs: 3
+  max_completion_length: 256
+  beta: 0.04
+
+reward:
+  length_weight: 0.25
+  diversity_weight: 0.25
+  anti_pattern_weight: 0.25
+  completeness_weight: 0.25
+  min_length: 15
+  max_length: 512
+
+data:
+  train_samples: 200
+  test_split: 0.2
+  model: "deepseek-v4-pro"
+
+output:
+  sft_adapter: "./output/sft_adapter"
+  grpo_adapter: "./output/grpo_adapter"
