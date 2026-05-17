@@ -19,4 +19,3 @@ docs/
 llm_model/output/
 llm_model/data/dataset.jsonl
 llm_model/data/test_prompts.json
-llm_model/eval/eval_report.md
