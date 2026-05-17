@@ -9,9 +9,13 @@ media/
 staticfiles/
 static/
 *.env
+.claude/
 !.env.example
 backend/web/documents/data.txt
 backend/web/documents/lancedb_storage
 backend/web/documents/tantivy_index
 frontend/public/vad/
 docs/
+llm_model/output/
+llm_model/data/dataset.jsonl
+llm_model/data/test_prompts.json
