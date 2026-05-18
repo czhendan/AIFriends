@@ -1,4 +1,4 @@
-from django.urls import path, re_path
+from django.urls import include, path, re_path
 
 from web.views.create.character.create import CreateCharacterView
 from web.views.create.character.get_list import GetListCharacterView
@@ -41,6 +41,7 @@ urlpatterns = [
     path('api/friend/message/get_history/', GetHistoryView.as_view()),
     path('api/friend/message/asr/asr/', ASRView.as_view()),
     path("api/create/character/voice/get_list", GetVoiceListView.as_view()),
+    path('api/group/', include('web.views.group.urls')),
     path('', index),
     re_path(r'^(?!media/|static/|assets/).*$', index)
 ]
