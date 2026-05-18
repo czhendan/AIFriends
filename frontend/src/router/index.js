@@ -30,6 +30,18 @@ const router = createRouter({
       }
     },
     {
+      path: '/group/',
+      component: () => import('@/views/group/GroupIndex.vue'),
+      name: 'group-index',
+      meta: { needLogin: true }
+    },
+    {
+      path: '/group/:group_id/chat/',
+      component: () => import('@/views/group/GroupChat.vue'),
+      name: 'group-chat',
+      meta: { needLogin: true }
+    },
+    {
       path: '/create/',
       component: CreateIndex,
       name: 'create-index',
