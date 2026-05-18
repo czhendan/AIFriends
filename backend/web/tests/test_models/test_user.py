@@ -2,10 +2,12 @@ from django.contrib.auth.models import User
 from web.models.user import UserProfile
 
 
-def test_user_profile_auto_created(db):
+def test_user_profile_create(db):
+    """UserProfile can be created and linked to a User."""
     user = User.objects.create_user(username="newuser", password="pass123")
-    UserProfile.objects.create(user=user)
-    assert UserProfile.objects.filter(user=user).exists()
+    profile = UserProfile.objects.create(user=user, profile="test profile")
+    assert profile.user == user
+    assert profile.profile == "test profile"
 
 
 def test_user_profile_str(db, test_user):
