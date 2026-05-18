@@ -59,6 +59,12 @@ function scrollToBottom() {
   })
 }
 
+defineExpose({
+  pushMessage,
+  appendContent,
+  markSpeakerDone,
+})
+
 watch(() => props.groupId, () => {
   history.value = []
   loadHistory()

@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref} from "vue";
+import {onMounted, ref, useTemplateRef} from "vue";
 import {useRoute} from "vue-router";
 import api from "@/js/http/api.js";
 import GroupChatField from "@/views/group/components/GroupChatField.vue";
@@ -10,6 +10,7 @@ const route = useRoute()
 const groupId = Number(route.params.group_id)
 const group = ref(null)
 const error = ref('')
+const chatFieldRef = useTemplateRef('chat-field-ref')
 
 async function loadGroup() {
   try {
@@ -24,6 +25,18 @@ async function loadGroup() {
   }
 }
 
+function handlePushMessage(msg) {
+  chatFieldRef.value.pushMessage(msg)
+}
+
+function handleAppendContent(speakerId, speakerName, delta) {
+  chatFieldRef.value.appendContent(speakerId, speakerName, delta)
+}
+
+function handleMarkSpeakerDone(speakerId) {
+  chatFieldRef.value.markSpeakerDone(speakerId)
+}
+
 onMounted(loadGroup)
 </script>
 
@@ -36,8 +49,19 @@ onMounted(loadGroup)
         <h1 class="text-xl font-bold">{{ group.name }}</h1>
         <span class="text-sm text-gray-500">{{ group.members.length }}人 · {{ group.characters.length }}角色</span>
       </div>
-      <GroupChatField :group-id="groupId" :characters="group.characters" :members="group.members" />
-      <GroupInputField :group-id="groupId" :characters="group.characters" />
+      <GroupChatField
+        ref="chat-field-ref"
+        :group-id="groupId"
+        :characters="group.characters"
+        :members="group.members"
+      />
+      <GroupInputField
+        :group-id="groupId"
+        :characters="group.characters"
+        @pushMessage="handlePushMessage"
+        @appendContent="handleAppendContent"
+        @markSpeakerDone="handleMarkSpeakerDone"
+      />
     </div>
     <GroupInfoPanel :group="group" @update="loadGroup" />
   </div>
