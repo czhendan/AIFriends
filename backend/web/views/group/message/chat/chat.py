@@ -10,7 +10,7 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
-from web.models.group_chat import GroupChat, GroupMember, GroupMessage
+from web.models.group_chat import GroupChat, GroupMember, GroupMessage, GroupCharacter, GroupMemory
 from web.models.user import UserProfile
 from web.views.group.message.chat.graph import GroupChatGraph
 
@@ -23,13 +23,32 @@ class SSERenderer(BaseRenderer):
         return data
 
 
-def add_context_messages(inputs, group_id, mentioned_ids):
-    msgs = inputs['messages']
+def build_char_map(group_id):
+    group_characters = GroupCharacter.objects.filter(
+        group_id=group_id
+    ).select_related('character')
 
-    prompt, char_map = GroupChatGraph.build_speaker_prompt(
-        group_id, mentioned_ids, round_num=0
-    )
-    msgs = [SystemMessage(prompt)] + msgs
+    char_map = {}
+    for gc in group_characters:
+        c = gc.character
+        char_map[c.id] = {
+            'id': c.id,
+            'name': c.name,
+            'profile': c.profile,
+        }
+    return char_map
+
+
+def get_group_memory(group_id):
+    try:
+        gm = GroupMemory.objects.get(group_id=group_id)
+        return gm.memory or ''
+    except GroupMemory.DoesNotExist:
+        return ''
+
+
+def add_context_messages(inputs, char_map, group_memory):
+    msgs = inputs['messages']
 
     char_summary_parts = []
     for cid, info in char_map.items():
@@ -37,24 +56,10 @@ def add_context_messages(inputs, group_id, mentioned_ids):
     if char_summary_parts:
         msgs = [SystemMessage('群内角色：\n' + '\n'.join(char_summary_parts))] + msgs
 
-    messages_raw = list(
-        GroupMessage.objects.filter(group_id=group_id)
-        .select_related('sender_user', 'sender_character')
-        .order_by('-id')[:10]
-    )
-    messages_raw.reverse()
-    history_msgs = []
-    for m in messages_raw:
-        if m.sender_type == 'user':
-            name = m.sender_user.user.username
-            text = f"[用户 {name}]: {m.content}"
-            history_msgs.append(HumanMessage(text))
-        else:
-            name = m.sender_character.name
-            text = f"[{name}]: {m.content}"
-            history_msgs.append(AIMessage(text))
+    if group_memory:
+        msgs = [SystemMessage(f"【群聊记忆】\n{group_memory}")] + msgs
 
-    return {'messages': msgs[:1] + history_msgs + msgs[-1:]}
+    return {'messages': msgs}
 
 
 class GroupChatView(APIView):
@@ -87,21 +92,45 @@ class GroupChatView(APIView):
             mentions=mentions,
         )
 
+        # 同步查询所有需要的数据
+        char_map = build_char_map(group.id)
+        group_memory = get_group_memory(group.id)
+
+        # 注入历史消息
         inputs = {'messages': [HumanMessage(message)]}
-        inputs = add_context_messages(inputs, group_id, mentions)
+        inputs = add_context_messages(inputs, char_map, group_memory)
+
+        messages_raw = list(
+            GroupMessage.objects.filter(group_id=group_id)
+            .select_related('sender_user', 'sender_character')
+            .order_by('-id')[:10]
+        )
+        messages_raw.reverse()
+        history_msgs = []
+        for m in messages_raw:
+            if m.sender_type == 'user':
+                name = m.sender_user.user.username
+                text = f"[用户 {name}]: {m.content}"
+                history_msgs.append(HumanMessage(text))
+            else:
+                name = m.sender_character.name
+                text = f"[{name}]: {m.content}"
+                history_msgs.append(AIMessage(text))
+
+        inputs = {'messages': inputs['messages'][:1] + history_msgs + inputs['messages'][-1:]}
 
         response = StreamingHttpResponse(
-            self.event_stream(group, user_profile, inputs, mentions),
+            self.event_stream(group, char_map, group_memory, inputs, mentions),
             content_type='text/event-stream'
         )
         response['Cache-Control'] = 'no-cache'
         response['X-Accel-Buffering'] = 'no'
         return response
 
-    def event_stream(self, group, user_profile, inputs, mentions):
+    def event_stream(self, group, char_map, group_memory, inputs, mentions):
         mq = Queue()
         thread = threading.Thread(
-            target=self.worker, args=(group.id, inputs, mentions, mq)
+            target=self.worker, args=(char_map, group_memory, inputs, mentions, mq, group.id)
         )
         thread.start()
 
@@ -128,16 +157,12 @@ class GroupChatView(APIView):
 
         yield 'data: [DONE]\n\n'
 
-        char_map = {}
-        for gc in group.characters.select_related('character'):
-            char_map[gc.character.id] = gc.character
-
         for char_id, content in full_outputs.items():
             if content.strip():
                 GroupMessage.objects.create(
                     group=group,
                     sender_type='character',
-                    sender_character=char_map.get(char_id),
+                    sender_character_id=char_id,
                     content=content[:2000],
                     mentions=[],
                 )
@@ -147,20 +172,20 @@ class GroupChatView(APIView):
             from web.views.group.message.chat.memory.update import update_group_memory
             update_group_memory(group)
 
-    def worker(self, group_id, inputs, mentions, mq):
+    def worker(self, char_map, group_memory, inputs, mentions, mq, group_id):
         try:
-            asyncio.run(self.run_chat_rounds(group_id, inputs, mentions, mq))
+            asyncio.run(self.run_chat_rounds(char_map, group_memory, inputs, mentions, mq))
         finally:
             mq.put_nowait(None)
 
-    async def run_chat_rounds(self, group_id, inputs, mentions, mq):
+    async def run_chat_rounds(self, char_map, group_memory, inputs, mentions, mq):
         MAX_ROUNDS = 2
         current_inputs = inputs
 
         for round_num in range(MAX_ROUNDS):
             speaker_picker = GroupChatGraph.create_speaker_picker()
-            prompt, char_map = GroupChatGraph.build_speaker_prompt(
-                group_id, mentions if round_num == 0 else [], round_num
+            prompt = GroupChatGraph.build_speaker_prompt(
+                char_map, mentions if round_num == 0 else [], round_num
             )
 
             pick_inputs = {
@@ -180,16 +205,16 @@ class GroupChatView(APIView):
             for char_id in speakers:
                 tasks.append(
                     self.generate_character_response(
-                        char_id, char_map, group_id, current_inputs, mq
+                        char_id, char_map, group_memory, current_inputs, mq
                     )
                 )
             await asyncio.gather(*tasks)
 
             mq.put_nowait({'event': 'round_complete', 'round': round_num + 1})
 
-    async def generate_character_response(self, char_id, char_map, group_id, inputs, mq):
+    async def generate_character_response(self, char_id, char_map, group_memory, inputs, mq):
         llm = GroupChatGraph._build_llm(streaming=True)
-        system_prompt = GroupChatGraph.build_character_prompt(char_id, char_map, group_id)
+        system_prompt = GroupChatGraph.build_character_prompt(char_id, char_map, group_memory)
 
         msgs = [system_prompt] + inputs['messages']
         speaker_info = {

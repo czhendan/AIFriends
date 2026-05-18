@@ -2,12 +2,10 @@ import json
 import os
 from typing import TypedDict, Annotated, Sequence, List
 
-from langchain_core.messages import BaseMessage, SystemMessage, HumanMessage
+from langchain_core.messages import BaseMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 from langgraph.constants import START, END
 from langgraph.graph import add_messages, StateGraph
-
-from web.models.group_chat import GroupCharacter, GroupMemory
 
 
 class GroupChatGraph:
@@ -56,21 +54,10 @@ class GroupChatGraph:
         return graph.compile()
 
     @staticmethod
-    def build_speaker_prompt(group_id: int, mentioned_character_ids: List[int], round_num: int):
-        group_characters = GroupCharacter.objects.filter(
-            group_id=group_id
-        ).select_related('character')
-
-        char_map = {}
+    def build_speaker_prompt(char_map: dict, mentioned_character_ids: List[int], round_num: int) -> str:
         char_descriptions = []
-        for gc in group_characters:
-            c = gc.character
-            char_map[c.id] = {
-                'id': c.id,
-                'name': c.name,
-                'profile': c.profile,
-            }
-            char_descriptions.append(f"- ID:{c.id} | {c.name} | {c.profile[:200]}")
+        for cid, info in char_map.items():
+            char_descriptions.append(f"- ID:{cid} | {info['name']} | {info['profile'][:200]}")
 
         char_list_text = '\n'.join(char_descriptions) if char_descriptions else '暂无角色'
 
@@ -86,7 +73,7 @@ class GroupChatGraph:
         if round_num >= 1:
             round_hint = f'当前是第 {round_num + 1} 轮自动触发。尽量不要再触发新角色发言，除非非常必要。'
 
-        prompt = f"""你是群聊调度员。根据当前对话上下文，判断哪些角色应该发言。
+        return f"""你是群聊调度员。根据当前对话上下文，判断哪些角色应该发言。
 
 群内角色：
 {char_list_text}
@@ -101,21 +88,15 @@ class GroupChatGraph:
 
 请以 JSON 数组格式返回角色ID，例如：[3, 7] 或 []"""
 
-        return prompt, char_map
-
     @staticmethod
-    def build_character_prompt(character_id: int, char_map: dict, group_id: int) -> SystemMessage:
+    def build_character_prompt(character_id: int, char_map: dict, group_memory: str) -> SystemMessage:
         char_info = char_map.get(character_id, {})
         char_name = char_info.get('name', '未知角色')
         char_profile = char_info.get('profile', '')
 
         memory_text = ''
-        try:
-            gm = GroupMemory.objects.get(group_id=group_id)
-            if gm.memory:
-                memory_text = f"\n【群聊记忆】\n{gm.memory}\n"
-        except GroupMemory.DoesNotExist:
-            pass
+        if group_memory:
+            memory_text = f"\n【群聊记忆】\n{group_memory}\n"
 
         prompt = f"""你是 {char_name}，正在参与一个群聊。
 
