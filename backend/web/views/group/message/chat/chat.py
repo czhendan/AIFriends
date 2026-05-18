@@ -194,6 +194,12 @@ class GroupChatView(APIView):
             result = speaker_picker.invoke(pick_inputs)
             speakers = result.get('speakers', [])
 
+            # 强制添加被 @ 的角色（仅第 0 轮）
+            if round_num == 0 and mentions:
+                for cid in mentions:
+                    if cid in char_map and cid not in speakers:
+                        speakers.append(cid)
+
             if not speakers:
                 break
 
