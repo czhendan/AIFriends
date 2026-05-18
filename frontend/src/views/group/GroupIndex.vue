@@ -68,6 +68,20 @@ function openChat(groupId) {
   router.push({name: 'group-chat', params: {group_id: groupId}})
 }
 
+async function handleRemoveGroup(groupId, event) {
+  event.stopPropagation()
+  if (!confirm('确定要解散这个群聊吗？')) return
+
+  try {
+    const res = await api.post('api/group/remove/', {group_id: groupId})
+    if (res.data.result === 'success') {
+      groups.value = groups.value.filter(g => g.id !== groupId)
+    }
+  } catch (err) {
+    console.log(err)
+  }
+}
+
 function handleCreated(newGroup) {
   groups.value.unshift(newGroup)
 }
@@ -87,9 +101,14 @@ function handleCreated(newGroup) {
     <div class="w-full max-w-3xl px-9 mt-6 space-y-4">
       <div
         v-for="g in groups" :key="g.id"
-        class="card bg-base-100 shadow-md cursor-pointer hover:bg-base-200 transition"
+        class="card bg-base-100 shadow-md cursor-pointer hover:bg-base-200 transition relative"
         @click="openChat(g.id)"
       >
+        <button
+          v-if="g.role === 'owner'"
+          class="btn btn-ghost btn-xs btn-circle absolute top-2 right-2 z-10"
+          @click="handleRemoveGroup(g.id, $event)"
+        >✕</button>
         <div class="card-body p-6">
           <div class="flex justify-between items-center">
             <h2 class="card-title text-lg">{{ g.name }}</h2>
