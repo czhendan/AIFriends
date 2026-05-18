@@ -3,6 +3,7 @@
 import MenuIcon from "@/components/navbar/icons/MenuIcon.vue";
 import HomepageIcon from "@/components/navbar/icons/HomepageIcon.vue";
 import FriendIcon from "@/components/navbar/icons/FriendIcon.vue";
+import GroupIcon from "@/components/navbar/icons/GroupIcon.vue";
 import CreateIcon from "@/components/navbar/icons/CreateIcon.vue";
 import SearchIcon from "@/components/navbar/icons/SearchIcon.vue";
 import {useUserStore} from "@/stores/user.js";
@@ -93,6 +94,12 @@ function handleSearch() {
             <!-- Home icon -->
             <FriendIcon />
             <span class="is-drawer-close:hidden text-base ml-2 whitespace-nowrap py-1.5">好友</span>
+          </RouterLink>
+        </li>
+        <li>
+          <RouterLink :to="{name: 'group-index'}" active-class="menu-focus" class="is-drawer-close:tooltip is-drawer-close:tooltip-right" data-tip="群聊">
+            <GroupIcon />
+            <span class="is-drawer-close:hidden text-base ml-2 whitespace-nowrap py-1.5">群聊</span>
           </RouterLink>
         </li>
         <li>
