@@ -109,13 +109,15 @@ class GroupChatView(APIView):
         history_msgs = []
         for m in messages_raw:
             if m.sender_type == 'user':
-                name = m.sender_user.user.username
-                text = f"[用户 {name}]: {m.content}"
-                history_msgs.append(HumanMessage(text))
+                history_msgs.append(HumanMessage(
+                    content=m.content,
+                    name=m.sender_user.user.username
+                ))
             else:
-                name = m.sender_character.name
-                text = f"[{name}]: {m.content}"
-                history_msgs.append(AIMessage(text))
+                history_msgs.append(AIMessage(
+                    content=m.content,
+                    name=m.sender_character.name
+                ))
 
         inputs = {'messages': inputs['messages'][:1] + history_msgs + inputs['messages'][-1:]}
 

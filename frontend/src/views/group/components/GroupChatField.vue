@@ -15,7 +15,23 @@ async function loadHistory() {
       items_count: 0,
     })
     if (res.data.result === 'success') {
-      history.value = res.data.messages
+      history.value = res.data.messages.map(m => {
+        if (m.sender_type === 'user') {
+          return {
+            speakerId: null,
+            speakerName: '你',
+            content: m.content,
+            done: true,
+          }
+        } else {
+          return {
+            speakerId: m.sender.id,
+            speakerName: m.sender.name,
+            content: m.content,
+            done: true,
+          }
+        }
+      })
       await nextTick()
       scrollToBottom()
     }
