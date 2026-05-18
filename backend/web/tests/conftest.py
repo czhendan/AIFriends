@@ -29,7 +29,7 @@ def test_user(db):
     from web.models.user import UserProfile
 
     user = User.objects.create_user(username="testuser", password="testpass123")
-    profile = UserProfile.objects.get(user=user)
+    profile = UserProfile.objects.create(user=user)
     return user, profile
 
 
