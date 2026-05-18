@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p e:/vscode/AIFriends/docs/superpowers/specs)",
+      "Skill(superpowers:writing-plans)",
+      "Skill(superpowers:writing-plans:*)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Skill(superpowers:subagent-driven-development)",
+      "Skill(superpowers:subagent-driven-development:*)",
+      "Bash(python manage.py makemigrations)",
+      "Bash(conda env *)",
+      "Bash(conda activate *)"
+    ],
+    "additionalDirectories": [
+      "e:\\vscode\\AIFriends\\docs\\superpowers"
+    ]
+  }
+}

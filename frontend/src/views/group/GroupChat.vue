@@ -11,7 +11,7 @@ const groupId = Number(route.params.group_id)
 const group = ref(null)
 const error = ref('')
 
-onMounted(async () => {
+async function loadGroup() {
   try {
     const res = await api.post('api/group/get_single/', {group_id: groupId})
     if (res.data.result === 'success') {
@@ -22,7 +22,9 @@ onMounted(async () => {
   } catch (err) {
     error.value = '加载群信息失败'
   }
-})
+}
+
+onMounted(loadGroup)
 </script>
 
 <template>
@@ -37,7 +39,7 @@ onMounted(async () => {
       <GroupChatField :group-id="groupId" :characters="group.characters" :members="group.members" />
       <GroupInputField :group-id="groupId" :characters="group.characters" />
     </div>
-    <GroupInfoPanel :group="group" />
+    <GroupInfoPanel :group="group" @update="loadGroup" />
   </div>
 </template>
 

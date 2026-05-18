@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(conda run *)",
+      "Read(//e/CONDA/envs/aifriends/Lib/site-packages/django/apps/**)",
+      "Read(//e/CONDA/envs/aifriends/Lib/site-packages/django/**)",
+      "Bash(sc query *)",
+      "Bash(mysqld --version)",
+      "Bash(conda info *)",
+      "Bash(/e/CONDA/envs/aifriends/python.exe manage.py makemigrations)",
+      "Bash(mkdir -p e:/vscode/AIFriends/backend/web/views/group/member)",
+      "Bash(mkdir -p e:/vscode/AIFriends/backend/web/views/group/character)",
+      "Bash(mkdir -p e:/vscode/AIFriends/backend/web/views/group/message/chat/memory)",
+      "Bash(touch __TRACKED_VAR__/__init__.py)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
